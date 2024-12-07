@@ -1,0 +1,55 @@
+pipeline {
+    agent any
+    tools {
+        jdk 'jdk17'
+        maven 'maven'
+    }
+    environment {
+     SCANNER_HOME = tool 'sonar-scanner'
+    }
+
+
+    stages {
+
+       
+        stage('git checkout') {
+            steps {
+               git ' https://github.com/mahesharimalla/maven-web-application.git '
+            }
+        }
+        
+           stage('build'){
+            steps{
+                sh 'mvn clean package'
+            }
+        }
+        
+       
+    
+        stage('sonarqube analysis'){
+            steps {
+                withSonarQubeEnv('sonar-server') {
+                     sh '''$SCANNER_HOME/bin/sonar-scanner  -Dsonar.projectKey=maven-code-quality  -Dsonar.projectName=maven-code-quality''' 
+                   }
+    
+            }
+        }
+        
+       
+        
+        stage('deploy to nexus'){
+            steps{
+                withMaven(globalMavenSettingsConfig: 'nexus-cred', jdk: 'jdk17', maven: 'maven', mavenSettingsConfig: '', traceability: true) {
+                sh 'mvn clean deploy'
+                    
+                }
+            }
+        }
+        
+    }
+    
+    
+    
+}
+
+
